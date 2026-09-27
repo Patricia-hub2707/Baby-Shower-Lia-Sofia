@@ -34,6 +34,8 @@
 .gift-link{position:absolute;left:21.2%;right:20.6%;top:76.08%;height:8.2%;border-radius:999px;z-index:4;text-indent:-9999px;overflow:hidden}
 .gift-link:focus{outline:3px solid #fff;outline-offset:-6px}
 @media(min-width:681px){.num{font-size:49px}.lab{font-size:14px}.event-date{font-size:17px}.event-time{font-size:18px}}
+
+.regalo-img-wrap{width:100%;display:flex;justify-content:center;margin:4px 0 12px}.regalo-img{width:150px;height:150px;object-fit:contain;background:#fffaf7;border-radius:16px;border:1px solid #f0ded8;padding:6px}
 </style>
 
 <style>
@@ -112,6 +114,7 @@ function esc(v) {
   return String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 
+const IMAGENES_REGALOS = {"18": "regalo-fila-18.png", "10": "regalo-fila-10.png", "14": "regalo-fila-14.png", "19": "regalo-fila-19.png", "15": "regalo-fila-15.png", "45": "regalo-fila-45.png", "26": "regalo-fila-26.png", "11": "regalo-fila-11.png", "25": "regalo-fila-25.png", "13": "regalo-fila-13.png", "44": "regalo-fila-44.png", "35": "regalo-fila-35.png", "30": "regalo-fila-30.png", "42": "regalo-fila-42.png", "24": "regalo-fila-24.png", "38": "regalo-fila-38.png", "7": "regalo-fila-7.png", "8": "regalo-fila-8.png", "41": "regalo-fila-41.png", "32": "regalo-fila-32.png", "22": "regalo-fila-22.png", "17": "regalo-fila-17.png", "20": "regalo-fila-20.png", "33": "regalo-fila-33.png", "39": "regalo-fila-39.png", "9": "regalo-fila-9.png", "31": "regalo-fila-31.png", "40": "regalo-fila-40.png", "16": "regalo-fila-16.png", "27": "regalo-fila-27.png", "36": "regalo-fila-36.png", "6": "regalo-fila-6.png", "12": "regalo-fila-12.png", "29": "regalo-fila-29.png", "21": "regalo-fila-21.png", "43": "regalo-fila-43.png", "23": "regalo-fila-23.png", "37": "regalo-fila-37.png", "34": "regalo-fila-34.png", "28": "regalo-fila-28.png"};
 async function cargarRegalos() {
   const box = document.getElementById("regalos");
   box.innerHTML = '<div class="cargando">Cargando regalitos… 💕</div>';
@@ -122,6 +125,7 @@ async function cargarRegalos() {
     box.innerHTML = items.map(r => {
       const elegido = String(r.estado).trim().toLowerCase() === "elegido";
       return `<article class="regalo">
+        ${IMAGENES_REGALOS[r.fila] ? `<div class="regalo-img-wrap"><img class="regalo-img" src="imagenes-regalos/${IMAGENES_REGALOS[r.fila]}" alt="Imagen referencial de ${esc(r.producto)}" loading="lazy"></div>` : ""}
         <h3>${esc(r.producto)}</h3>
         ${r.descripcion ? `<p>${esc(r.descripcion)}</p>` : ""}
         ${r.categoria ? `<p><b>Categoría:</b> ${esc(r.categoria)}</p>` : ""}
