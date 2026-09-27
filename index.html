@@ -35,6 +35,24 @@
 .gift-link:focus{outline:3px solid #fff;outline-offset:-6px}
 @media(min-width:681px){.num{font-size:49px}.lab{font-size:14px}.event-date{font-size:17px}.event-time{font-size:18px}}
 </style>
+
+<style>
+#listaModal{position:fixed;inset:0;background:rgba(73,45,42,.58);z-index:9999;display:none;align-items:flex-end;justify-content:center;line-height:1.35}
+#listaModal.abierto{display:flex}
+.lista-panel{width:min(100%,680px);height:min(92vh,900px);background:#fffaf5;border-radius:28px 28px 0 0;padding:18px 14px 26px;overflow:auto;font-family:Georgia,"Times New Roman",serif;color:#74534b}
+.lista-cab{position:sticky;top:-18px;background:#fffaf5;padding:12px 4px 14px;z-index:2;text-align:center}
+.lista-cab h2{margin:2px 0 5px;color:#9c5e58;font-size:28px;font-style:italic}
+.lista-cab p{margin:0;font-size:14px}
+.cerrar{position:absolute;right:15px;top:10px;border:0;background:#f4d7d4;color:#8f5554;width:36px;height:36px;border-radius:50%;font-size:22px;cursor:pointer}
+.regalo{background:#fff;border:1px solid #efd8d1;border-radius:18px;padding:14px;margin:10px 0;box-shadow:0 4px 14px rgba(90,55,50,.06)}
+.regalo h3{margin:0 0 5px;color:#9c5e58;font-size:18px}
+.regalo p{margin:3px 0;font-size:14px}
+.estado{font-weight:bold;margin-top:8px!important}
+.elegir{width:100%;border:0;border-radius:999px;padding:12px 14px;margin-top:10px;background:#cf7d85;color:white;font-weight:bold;font-size:15px;cursor:pointer}
+.elegir[disabled]{background:#c9b7b3;cursor:default}
+.cargando{text-align:center;padding:35px 10px;color:#9c5e58}
+</style>
+
 </head>
 <body>
 <main class="wrap">
@@ -46,7 +64,7 @@
 <div class="unit"><span class="num" id="s">--</span><span class="lab">SEGUNDOS</span></div>
 </div>
 <div class="event-info"><div class="event-date">📅 &nbsp; SÁBADO 10 DE OCTUBRE DE 2026</div><div class="event-time">◷ &nbsp; 14:00 HRS</div></div>
-<a class="gift-link" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQSssn795x5kZGUItYj5POCGcacanBCjjxdwNEQhN3Z2sr3Tgf5sjMaiq9su8aScLnK9B4_MZlOv4BY/pubhtml?gid=63163161&single=true" target="_blank" rel="noopener noreferrer" aria-label="Ver lista de regalos de Lía Sofía">Ver lista de regalos</a>
+<a class="gift-link" href="#lista-regalos" id="abrirLista" aria-label="Ver lista de regalos de Lía Sofía">Ver lista de regalos</a>
 </main>
 <script>
 const target=new Date("2026-10-10T14:00:00-03:00").getTime();
@@ -55,4 +73,87 @@ const D=86400000,H=3600000,M=60000;const d=Math.floor(x/D);x%=D;const h=Math.flo
 [["d",d],["h",h],["m",m],["s",s]].forEach(([i,v])=>document.getElementById(i).textContent=String(v).padStart(2,"0"))}
 tick();setInterval(tick,1000);
 </script>
+
+<div id="listaModal" role="dialog" aria-modal="true" aria-label="Lista de regalos de Lía Sofía">
+  <div class="lista-panel">
+    <div class="lista-cab">
+      <button class="cerrar" id="cerrarLista" aria-label="Cerrar">×</button>
+      <h2>Regalitos para Lía Sofía 🎀</h2>
+      <p>Elige el detalle que quieras regalarle. Los que ya fueron seleccionados aparecerán como <b>Elegido ✓</b>.</p>
+    </div>
+    <div id="regalos"><div class="cargando">Cargando regalitos… 💕</div></div>
+  </div>
+</div>
+
+
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYi1vXRmspb0Hkh_I8SboW1Hkue2hVhnBqSZvU_09PgYz_UuBB2ZaJj1JJ7jcD7sSXNg/exec";
+let cbN = 0;
+
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cb = "__lia_cb_" + (++cbN);
+    const s = document.createElement("script");
+    const q = new URLSearchParams(params);
+    q.set("callback", cb);
+    window[cb] = data => {
+      resolve(data); delete window[cb]; s.remove();
+    };
+    s.onerror = () => { reject(new Error("No se pudo conectar")); delete window[cb]; s.remove(); };
+    s.src = APPS_SCRIPT_URL + "?" + q.toString();
+    document.body.appendChild(s);
+    setTimeout(() => {
+      if (window[cb]) { reject(new Error("Tiempo agotado")); delete window[cb]; s.remove(); }
+    }, 15000);
+  });
+}
+
+function esc(v) {
+  return String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+async function cargarRegalos() {
+  const box = document.getElementById("regalos");
+  box.innerHTML = '<div class="cargando">Cargando regalitos… 💕</div>';
+  try {
+    const data = await jsonp({accion:"listar"});
+    if (!data.ok) throw new Error(data.mensaje || "Error");
+    const items = (data.regalos || []).filter(r => r.producto);
+    box.innerHTML = items.map(r => {
+      const elegido = String(r.estado).trim().toLowerCase() === "elegido";
+      return `<article class="regalo">
+        <h3>${esc(r.producto)}</h3>
+        ${r.descripcion ? `<p>${esc(r.descripcion)}</p>` : ""}
+        ${r.categoria ? `<p><b>Categoría:</b> ${esc(r.categoria)}</p>` : ""}
+        <p class="estado">${elegido ? "Elegido ✓" : "Disponible 💕"}</p>
+        <button class="elegir" data-fila="${r.fila}" ${elegido ? "disabled" : ""}>
+          ${elegido ? "Ya fue elegido" : "Elegir este regalo 🎁"}
+        </button>
+      </article>`;
+    }).join("") || '<div class="cargando">No encontramos regalos para mostrar.</div>';
+  } catch(e) {
+    box.innerHTML = '<div class="cargando">No pudimos cargar la lista. Intenta nuevamente en unos segundos.</div>';
+  }
+}
+
+document.getElementById("abrirLista").addEventListener("click", e => {
+  e.preventDefault(); document.getElementById("listaModal").classList.add("abierto"); cargarRegalos();
+});
+document.getElementById("cerrarLista").addEventListener("click", () => document.getElementById("listaModal").classList.remove("abierto"));
+document.getElementById("listaModal").addEventListener("click", e => { if(e.target.id==="listaModal") e.currentTarget.classList.remove("abierto"); });
+document.getElementById("regalos").addEventListener("click", async e => {
+  const b=e.target.closest(".elegir"); if(!b || b.disabled) return;
+  if(!confirm("¿Quieres elegir este regalo para Lía Sofía? 💕")) return;
+  b.disabled=true; b.textContent="Guardando…";
+  try {
+    const data=await jsonp({accion:"elegir",fila:b.dataset.fila});
+    alert(data.mensaje || (data.ok ? "¡Regalo elegido! 💕" : "No se pudo elegir."));
+    await cargarRegalos();
+  } catch(err) {
+    alert("No pudimos registrar el regalo. Intenta nuevamente.");
+    b.disabled=false; b.textContent="Elegir este regalo 🎁";
+  }
+});
+</script>
+
 </body></html>
